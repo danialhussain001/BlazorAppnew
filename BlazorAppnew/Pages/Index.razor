@@ -1,0 +1,58 @@
+﻿@page "/"
+@inject HttpClient httpClient
+
+<h3>Random Advice</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (errorMessage != null)
+{
+    <p>An error occurred: @errorMessage</p>
+}
+else
+{
+    <div>
+        <p>@adviceText</p>
+        <button class="btn btn-primary" @onclick="FetchAdvice">Get Another Advice</button>
+    </div>
+}
+
+@code {
+    private bool isLoading = false;
+    private string errorMessage = null;
+    private string adviceText = "";
+
+    private async Task FetchAdvice()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var response = await httpClient.GetAsync("https://api.adviceslip.com/advice");
+            response.EnsureSuccessStatusCode();
+            var adviceData = await response.Content.ReadFromJsonAsync<AdviceResponse>();
+            adviceText = adviceData.slip.advice;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public class AdviceResponse
+    {
+        public Slip slip { get; set; }
+
+        public class Slip
+        {
+            public string advice { get; set; }
+        }
+    }
+}
